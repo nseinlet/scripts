@@ -1,0 +1,8 @@
+#!/bin/bash
+if [ -z "$1" ]
+  then
+    echo "No argument supplied"
+    echo "Usage = odoo-edit version"
+    exit 1
+fi
+atom /datas/src-migrations/enterprise/$1 /datas/src-migrations/odoo/$1 /datas/src-migrations/design-themes/$1

@@ -1,0 +1,10 @@
+#!/bin/bash
+if [ -z "$1" ]
+  then
+    echo "No argument supplied"
+    echo "Usage = odoo-launch version other_args"
+    exit 1
+fi
+cd "/datas/src-migrations/odoo/$1/"
+./odoo-bin --addons-path=/datas/src-migrations/enterprise/$1,/datas/src-migrations/odoo/$1/odoo/addons,/datas/src-migrations/odoo/$1/addons,/datas/src-migrations/design-themes/$1 ${@:2}
+
