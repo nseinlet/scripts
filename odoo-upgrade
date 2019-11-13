@@ -5,12 +5,24 @@ if [ -z "$2" ]
     echo "Usage = odoo-upgrade version db [template_db] [other_args]"
     exit 1
 fi
+
+D=odoo
+if [[ -f openerp/__init__.py ]]; then
+    D=openerp
+fi
+
 cd "/datas/src-migrations/odoo/$1/"
-ln -s /datas/src-migrations/saas-migration odoo/addons/base/maintenance
+ln -s /datas/src-migrations/saas-migration odoo/addons/base/maintenance 2>/dev/null
 if [ ! -z "$3" ]
   then
-    dropdb $2
+    dropdb $2 2>/dev/null
     createdb $2 --template $3
 fi
-./odoo-bin --addons-path=/datas/src-migrations/enterprise/$1,/datas/src-migrations/odoo/$1/odoo/addons,/datas/src-migrations/odoo/$1/addons,/datas/src-migrations/design-themes/$1 -d $2 ${@:4} --db-filter=^$2$ -u all
-
+./odoo-bin --addons-path=/datas/src-migrations/enterprise/$1,/datas/src-migrations/odoo/$1/odoo/addons,/datas/src-migrations/odoo/$1/addons,/datas/src-migrations/design-themes/$1 \
+-d $2 ${@:4} --db-filter=^$2$ -u all \
+--log-handler=:${LOGLEVEL} \
+    --log-handler=${D}.models.schema:INFO \
+    --log-handler=${D}.modules.loading:DEBUG --log-handler=${D}.modules.graph:CRITICAL \
+    --log-handler=${D}.modules.migration:DEBUG --log-handler=${D}.tools.misc:INFO \
+    --log-handler=openerp.addons.base.maintenance.migrations:DEBUG \
+    --log-handler=odoo.addons.base.maintenance.migrations:DEBUG
