@@ -26,24 +26,20 @@ do
         echo -e "${RED}$dir ${BLUE}$ver${NC}"
         cd $addonsfolder
         for d in */ ; do
-            echo -e "${RED}$dir ${BLUE}$ver${GREEN}$addon${NC}"
             addon=${d%/}
-            dropdb $ver-upddb-$addon
-            odoo-launch $ver -d $ver-upddb-$addon -i $addon --stop-after-init
-
+            src_db=$ver-upddb-$addon
+            trg_db=$TARGET-$ver-$addon
+            if psql -lqt | cut -d \| -f 1 | grep -qw $src_db; then
+                #DB already exists. Update module?
+                echo -e "Existing DB ${RED}$dir ${BLUE}$ver ${NC}install module ${GREEN}$addon${NC}"
+                odoo-launch $ver -d $src_db -u $addon --stop-after-init --logfile /dev/null
+            else
+                echo -e "Create DB ${RED}$dir ${BLUE}$ver ${NC}install module ${GREEN}$addon${NC}"
+                odoo-launch $ver -d $src_db -i $addon --stop-after-init --logfile /dev/null
+            fi
+            dropdb $trg_db
+            # odoo-upgrade $TARGET $trg_db $src_db --stop-after-init
         done
-        #
-        # if [ ! -d "$dir/$ver" ]; then
-        #     echo "${RED}clone $dir ${BLUE}$ver${NC}"
-        #     git clone --single-branch --branch $ver --depth 1 $rep $dir/$ver
-        # else
-        #     echo "${GREEN}update $dir ${BLUE}$ver${NC}"
-        #     cd $dir/$ver
-        #     git co $ver
-        #     git fetch origin $ver
-        #     git rebase --autostash
-        #     git remote add dev $repdev
-        # fi
     done
     echo -e "${GREEN}Finished.${NC}"
 done
