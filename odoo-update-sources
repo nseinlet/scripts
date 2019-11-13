@@ -1,11 +1,11 @@
-#!/bin/sh
-EOL_VERS="8.0 saas-6 9.0 saas-11.1 saas-11.2 saas-11.4 saas-11.5 "
-VERSIONS="master saas-13 10.0 saas-14 saas-15 saas-16 saas-17 saas-18 11.0 saas-11.3 12.0 saas-12.1"
+#!/bin/bash
+EOL_VERS="8.0 saas-6 9.0 saas-11 saas-12 saas-11.1 saas-11.2 saas-11.4 saas-11.5 saas-12.1 saas-12.2"
+VERSIONS="12.0 saas-12.3 saas-12.4 saas-12.5 13.0"
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Colo
+RED='\e[31m'
+GREEN='\e[32m'
+BLUE='\e[34m'
+NC='\e[39m' # No Colo
 
 REP1="odoo;git@github.com:odoo/odoo.git;git@github.com:odoo-dev/odoo.git"
 REP2="enterprise;git@github.com:odoo/enterprise.git;git@github.com:odoo-dev/enterprise.git"
@@ -26,12 +26,12 @@ do
             git clone --single-branch --branch $ver --depth 1 $rep $dir/$ver
         else
             echo "${GREEN}update $dir ${BLUE}$ver${NC}"
-            cd $dir/$ver 
+            cd $dir/$ver
             git co $ver
             git fetch origin $ver
             git rebase --autostash
             git remote add dev $repdev
         fi
-    done    
+    done
     echo "${GREEN}Finished.${NC}"
 done

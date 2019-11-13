@@ -1,0 +1,49 @@
+#!/bin/bash
+START_VERSIONS="12.0 saas-12.3 saas-12.4"
+TARGET="13.0"
+
+RED='\e[31m'
+GREEN='\e[32m'
+BLUE='\e[34m'
+NC='\e[39m' # No Colo
+
+REP1="odoo;git@github.com:odoo/odoo.git;addons"
+REP2="enterprise;git@github.com:odoo/enterprise.git;."
+
+base_dir="/datas/src-migrations/"
+
+for ver in $START_VERSIONS
+do
+    for repo in $REP1 $REP2
+    do
+        dir="$(echo ${repo} | cut -d';' -f1)"
+        rep="$(echo ${repo} | cut -d';' -f2)"
+        addonsfolder="$(echo ${repo} | cut -d';' -f3)"
+        cd "$base_dir/$dir/$ver"
+        git co $ver
+        git fetch origin $ver
+        git rebase --autostash
+        echo -e "${RED}$dir ${BLUE}$ver${NC}"
+        cd $addonsfolder
+        for d in */ ; do
+            echo -e "${RED}$dir ${BLUE}$ver${GREEN}$addon${NC}"
+            addon=${d%/}
+            dropdb $ver-upddb-$addon
+            odoo-launch $ver -d $ver-upddb-$addon -i $addon --stop-after-init
+
+        done
+        #
+        # if [ ! -d "$dir/$ver" ]; then
+        #     echo "${RED}clone $dir ${BLUE}$ver${NC}"
+        #     git clone --single-branch --branch $ver --depth 1 $rep $dir/$ver
+        # else
+        #     echo "${GREEN}update $dir ${BLUE}$ver${NC}"
+        #     cd $dir/$ver
+        #     git co $ver
+        #     git fetch origin $ver
+        #     git rebase --autostash
+        #     git remote add dev $repdev
+        # fi
+    done
+    echo -e "${GREEN}Finished.${NC}"
+done
