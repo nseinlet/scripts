@@ -40,6 +40,14 @@ do
                 # odoo-launch $ver -d $src_db -i $addon --stop-after-init --logfile /dev/null --no-http &
             else
                 echo -e "$(date "+%Y.%m.%d-%H.%M.%S") Create DB   ${RED}$dir ${BLUE}$ver ${NC}install module ${GREEN}$addon${NC}"
+                #If a DB is a localisation module...
+                #Install base, then change partner country, then install module as usual
+                _L10N=$(echo -n "$addon" | awk -vRS=, -vFS=_ '/^l10n_/{print $2}' | sort | uniq | tr '\n' ' ')
+                declare -a L10N=($_L10N)
+                if [[ -n "${#L10N[@]}" ]]; then
+                    odoo-launch $ver -d $src_db -i base --stop-after-init --logfile /dev/null --no-http
+                    psql -d "$src_db" -c "UPDATE res_partner SET country_id = (SELECT id FROM res_country WHERE lower(code)='${L10N[0]}')" > /dev/null
+                fi
                 odoo-launch $ver -d $src_db -i $addon --stop-after-init --logfile /dev/null --no-http &
             fi
             dropdb $trg_db 2>/dev/null &

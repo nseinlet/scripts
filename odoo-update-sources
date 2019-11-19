@@ -1,6 +1,6 @@
 #!/bin/bash
 EOL_VERS="8.0 saas-6 9.0 saas-11 saas-12 saas-11.1 saas-11.2 saas-11.4 saas-11.5 saas-12.1 saas-12.2"
-VERSIONS="12.0 saas-12.3 saas-12.4 saas-12.5 13.0"
+VERSIONS="11.0 saas-11.3 12.0 saas-12.3 saas-12.4 saas-12.5 13.0"
 
 RED='\e[31m'
 GREEN='\e[32m'
@@ -22,10 +22,10 @@ do
         repdev="$(echo ${repo} | cut -d';' -f3)"
         cd $base_dir
         if [ ! -d "$dir/$ver" ]; then
-            echo "${RED}clone $dir ${BLUE}$ver${NC}"
+            echo -e "${RED}clone $dir ${BLUE}$ver${NC}"
             git clone --single-branch --branch $ver --depth 1 $rep $dir/$ver
         else
-            echo "${GREEN}update $dir ${BLUE}$ver${NC}"
+            echo -e "${GREEN}update $dir ${BLUE}$ver${NC}"
             cd $dir/$ver
             git co $ver
             git fetch origin $ver
@@ -33,5 +33,5 @@ do
             git remote add dev $repdev
         fi
     done
-    echo "${GREEN}Finished.${NC}"
+    echo -e "${GREEN}Finished.${NC}"
 done
