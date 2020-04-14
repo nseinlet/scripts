@@ -1,7 +1,7 @@
 #!/bin/bash
-START_VERSIONS="12.0 saas-12.3"
-TARGET="13.0"
-MAX_THREADS=3
+START_VERSIONS="13.0"
+TARGET="saas-13.2"
+MAX_THREADS=7
 
 RED='\e[31m'
 GREEN='\e[32m'
@@ -21,8 +21,11 @@ do
         rep="$(echo ${repo} | cut -d';' -f2)"
         addonsfolder="$(echo ${repo} | cut -d';' -f3)"
         cd "$base_dir/$dir/$ver"
+	git reset HEAD --hard
+	git clean -df
         git co $ver
         git fetch origin $ver
+	git clean -df
         git rebase --autostash
         echo -e "${RED}$dir ${BLUE}$ver${NC}"
         cd $addonsfolder
@@ -37,7 +40,7 @@ do
             if psql -lqt | cut -d \| -f 1 | grep -qw $src_db; then
                 #DB already exists. Update module?
                 echo -e "$(date "+%Y.%m.%d-%H.%M.%S") Existing DB ${RED}$dir ${BLUE}$ver ${NC}update module  ${GREEN}$addon${NC}"
-                # odoo-launch $ver -d $src_db -i $addon --stop-after-init --logfile /dev/null --no-http &
+                #odoo-launch $ver -d $src_db -u $addon --stop-after-init --logfile /dev/null --no-http &
             else
                 echo -e "$(date "+%Y.%m.%d-%H.%M.%S") Create DB   ${RED}$dir ${BLUE}$ver ${NC}install module ${GREEN}$addon${NC}"
                 #If a DB is a localisation module...
