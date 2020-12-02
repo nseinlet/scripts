@@ -1,6 +1,6 @@
 #!/bin/bash
-EOL_VERS="8.0 saas-6 9.0 saas-11 saas-12 saas-11.1 saas-11.2 saas-11.4 saas-11.5 saas-12.1 saas-12.2"
-VERSIONS="11.0 saas-11.3 12.0 saas-12.3 saas-12.4 saas-12.5 13.0"
+EOL_VERS="8.0 saas-6 9.0 saas-11 saas-12 saas-11.1 saas-11.2 saas-11.3 saas-11.4 saas-11.5 saas-12.1 saas-12.2 saas-12.4 saas-12.5 saas-13.2 saas-13.3 saas-13.4 saas-13.5"
+VERSIONS="11.0 12.0 saas-12.3 13.0 14.0 master"
 
 RED='\e[31m'
 GREEN='\e[32m'
@@ -29,6 +29,8 @@ do
             cd $dir/$ver
             git co $ver
             git fetch origin $ver
+	        git reset HEAD --hard
+	        git clean -dfx
             git rebase --autostash
             git remote add dev $repdev
         fi

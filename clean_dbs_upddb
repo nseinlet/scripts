@@ -1,0 +1,3 @@
+#!/bin/bash
+psql -lqt | cut -d \| -f 1 | grep upddb | while read x; do dropdb $x; done
+# psql -l | awk '/migall/{print $1}' | xargs -rtn1 -P0 dropdb
