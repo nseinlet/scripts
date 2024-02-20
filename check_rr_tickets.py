@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 import odoolib
 import configparser
 
+debug = False
+
 config = configparser.ConfigParser()
 config.read('config.ini')
 user = config['CREDENTIALS']['login']
@@ -85,13 +87,18 @@ for task in task_ids:
     db = db_vals.get(db_name, False)
     if not db:
         msg = f"Database {db_name} doesn't looks like alive anymore. Task is then cancelled."
-        task_model.message_post(task['id'], body=msg, message_type="comment")
-        task_model.write(task['id'], {'stage_id': TASK_STAGE_CANCELLED_ID})
-    elif db['version'] in valid_targets:
+        if debug:
+            print(msg)
+        else:
+            task_model.message_post(task['id'], body=msg, message_type="comment")
+            task_model.write(task['id'], {'stage_id': TASK_STAGE_CANCELLED_ID})
+    elif db['version'].replace('+e', '') in valid_targets:
         msg = f"Database {db_name} is now in a supported version ({db['version']}), and this task can be closed."
-        print(msg)
-        #task_model.message_post(task['id'], body=msg, message_type="comment")
-        #task_model.write(task['id'], {'stage_id': TASK_STAGE_DONE_ID})
+        if debug:
+            print(msg)
+        else:
+            task_model.message_post(task['id'], body=msg, message_type="comment")
+            task_model.write(task['id'], {'stage_id': TASK_STAGE_DONE_ID})
     else:
         rr_to_check[db_name] = {'uuid': db['db_uuid'], 'stage_id': task['stage_id'][0], 'task_id': task['id'], 'version': db['version']}
 
@@ -116,17 +123,23 @@ for check in rr_to_check:
             msg += db['rr_locked_until']
         else:
             msg += " can be automatically upgraded"
-        task_model.message_post(db['task_id'], body=msg, message_type="comment")
-        task_model.write(db['task_id'], {'stage_id': TASK_STAGE_INTERNAL_FEEDBACK_ID})
+        if debug:
+            print(msg)
+        else:
+            task_model.message_post(db['task_id'], body=msg, message_type="comment")
+            task_model.write(db['task_id'], {'stage_id': TASK_STAGE_INTERNAL_FEEDBACK_ID})
     elif db['preflight_state'] not in ('rolling_release_available', 'rolling_release_warning') and db['stage_id'] in (TASK_STAGE_INTERNAL_FEEDBACK_ID, TASK_STAGE_CUSTOMER_FEEDBACK_ID):
         msg = f"DB {check} is not ready for RR, preflight state is {db['preflight_state']}, while task is waiting feedback"
         #Check last preflight upgrade status
-        lst_upg = upgrade_model.search_read([("db_uuid", "=", db['uuid']), ('quiet', '=', True), ('actuator', '=', 'meta'), ('aim', '=', 'test'), '|', ('active', '=', True), ('active', '=', False)], ["state", "id", "disabled_view_count"], order="id desc", limit=1)
+        lst_upg = upgrade_model.search_read([("db_uuid", "=", db['uuid']), ('quiet', '=', True), ('actuator', '=', 'meta'), ('aim', '=', 'test'), '|', ('active', '=', True), ('active', '=', False)], ["state", "id", "disabled_view_count", "create_date"], order="id desc", limit=1)
         if not lst_upg:
             msg = f"No automatic test upgrade found for {check} / {db['uuid']}. Please check subscription."
             print(msg)
             #task_model.message_post(db['task_id'], body=msg, message_type="comment")
             #task_model.write(db['task_id'], {'stage_id': TASK_STAGE_FUNCTIONAL_ID})
+
+        elif lst_upg[0]['create_date']<(datetime.now()-timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S'):
+            print(f"Test for db {db['name']} is too old, can't change anything.")
 
         elif lst_upg[0]['state'] in ('done', 'failed'):
             if lst_upg[0]['state'] == 'done':
@@ -134,5 +147,8 @@ for check in rr_to_check:
             elif lst_upg[0]['state'] == 'failed':
                 msg += f"\r\n \r\n Last automatic test upgrade failed. Please check logs for more information"
             msg += f"\r\n \r\n Last automatic test url: https://upgrade.odoo.com/web#id={lst_upg[0]['id']}&menu_id=107&cids=1&action=150&model=upgrade.request&view_type=form"
-            task_model.message_post(db['task_id'], body=msg, message_type="comment")
-            task_model.write(db['task_id'], {'stage_id': TASK_STAGE_TECHNICAL_ID})
+            if debug:
+                print(msg)
+            else:
+                task_model.message_post(db['task_id'], body=msg, message_type="comment")
+                task_model.write(db['task_id'], {'stage_id': TASK_STAGE_TECHNICAL_ID})
